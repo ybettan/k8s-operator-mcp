@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "golang-mcp-server": {
+      "command": "/home/ybettan/go/src/github.com/k8s-operator-mcp/k8s-operator-mcp",
+      "args": [],
+      "env": {}
+    }
+  }
+}
