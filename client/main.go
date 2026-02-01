@@ -22,19 +22,27 @@ func main() {
 	}
 	defer session.Close()
 
+	listRes, err := session.ListTools(ctx, nil)
+	if err != nil {
+		log.Fatalf("ListTool failed: %v", err)
+	}
+	for _, t := range listRes.Tools {
+		log.Printf("Tool: %s - %s", t.Name, t.Description)
+	}
+
 	// Call a tool on the server.
 	params := &mcp.CallToolParams{
 		Name:      "greet",
 		Arguments: map[string]any{"name": "Yoni"},
 	}
-	res, err := session.CallTool(ctx, params)
+	callRes, err := session.CallTool(ctx, params)
 	if err != nil {
 		log.Fatalf("CallTool failed: %v", err)
 	}
-	if res.IsError {
+	if callRes.IsError {
 		log.Fatal("tool failed")
 	}
-	for _, c := range res.Content {
+	for _, c := range callRes.Content {
 		log.Print(c.(*mcp.TextContent).Text)
 	}
 }
