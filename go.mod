@@ -1,4 +1,4 @@
-module github.com/k8s-operator-mcp
+module github.com/ybettan/k8s-operator-mcp
 
 go 1.23.4
 
