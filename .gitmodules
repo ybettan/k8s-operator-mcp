@@ -1,0 +1,3 @@
+[submodule "gpu-operator-templater"]
+	path = gpu-operator-templater
+	url = git@github.com:ybettan/gpu-operator-templater.git
