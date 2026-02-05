@@ -32,8 +32,8 @@ func main() {
 
 	// Call a tool on the server.
 	params := &mcp.CallToolParams{
-		Name:      "greet",
-		Arguments: map[string]any{"name": "Yoni"},
+		Name:      "create-operator-template",
+		Arguments: map[string]any{"operatorName": "my-gpu-operator"},
 	}
 	callRes, err := session.CallTool(ctx, params)
 	if err != nil {
