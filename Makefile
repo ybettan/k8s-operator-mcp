@@ -6,3 +6,7 @@ build:
 .PHONY: run
 run:
 	./client/myclient
+
+.PHONY: clean
+clean:
+	rm -rf generated-operators
