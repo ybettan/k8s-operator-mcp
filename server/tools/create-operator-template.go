@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -19,49 +20,47 @@ type Output struct {
 	DirName string `json:"dirName" jsonschema:"the directory containing the new operator code base"`
 }
 
-func runShellCommand(dir, command string, args []string) (string, string, error) {
+func runShellCommand(fromDir, command string, args []string) error {
 
 	var stdout, stderr bytes.Buffer
 
 	cmd := exec.Command(command, args...)
-	cmd.Dir = dir
+	cmd.Dir = fromDir
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return "", "", fmt.Errorf("failed to run command %v: %v", cmd, err)
+
+	cmdStr := fmt.Sprintf("%s", strings.Join(append([]string{command}, args...), " "))
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("failed to run command '%s': %v", cmdStr, err)
 	}
 
-	return stdout.String(), stderr.String(), nil
-}
-
-func buildTemplaterIfNeeded() (string, string, error) {
-
-	templaterPath := "gpu-operator-templater/templater"
-	if _, err := os.Stat(templaterPath); os.IsNotExist(err) {
-		return runShellCommand("gpu-operator-templater", "make", []string{"templater"})
-	}
-
-	return "", "", nil
+	return nil
 }
 
 func CreateOperatorTemplate(ctx context.Context, req *mcp.CallToolRequest, input Input) (*mcp.CallToolResult, Output, error) {
 
-	stdout, stderr, err := buildTemplaterIfNeeded()
-	if err != nil {
-		result := &mcp.CallToolResult{
-			IsError: true,
-			Content: []mcp.Content{
-				&mcp.TextContent{
-					Text: fmt.Sprintf("Failed to build templater: %v\nStdout: %s\nStderr: %s", err, stdout, stderr),
-				},
-			},
+	// Check if templater binary exists, if not build it
+	if _, err := os.Stat("gpu-operator-templater/templater"); os.IsNotExist(err) {
+		err := runShellCommand("gpu-operator-templater", "make", []string{"templater"})
+		if err != nil {
+			return nil, Output{}, fmt.Errorf("failed to build tempalter: %v", err)
 		}
-		return result, Output{}, fmt.Errorf("failed to build tempalter: %v", err)
 	}
 
+	// Create a target directory for the new operator
 	operatorPath := filepath.Join("generated-operators", input.OperatorName)
 	if err := os.MkdirAll(operatorPath, 0755); err != nil {
 		return nil, Output{}, fmt.Errorf("couldn't create %s directory for the new operator: %v", operatorPath, err)
 	}
+
+	// Run the templater binary to generate the new operator codebase
+	err := runShellCommand(operatorPath, "../../gpu-operator-templater/templater",
+		[]string{"-f", "../../gpu-operator-templater/examples/config-kmm-only.yaml"})
+	if err != nil {
+		return nil, Output{}, fmt.Errorf("failed to generate operator's code for %s: %v", input.OperatorName, err)
+	}
+
 	return nil, Output{DirName: operatorPath}, nil
 }

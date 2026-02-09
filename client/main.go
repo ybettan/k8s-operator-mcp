@@ -40,9 +40,10 @@ func main() {
 		log.Fatalf("CallTool failed: %v", err)
 	}
 	if callRes.IsError {
+		for _, c := range callRes.Content {
+			bytes, err := c.MarshalJSON()
+			log.Println(err, string(bytes))
+		}
 		log.Fatal("tool failed")
-	}
-	for _, c := range callRes.Content {
-		log.Print(c.(*mcp.TextContent).Text)
 	}
 }
